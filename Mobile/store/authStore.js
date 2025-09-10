@@ -7,6 +7,8 @@ export const useAuthStore = create((set) => ({
   token: null,
   isLoading: false,
   isCheckingAuth: true,
+  setUser: (user) => set({ user }),   // ✅ Correct
+  setToken: (token) => set({ token }),
   register: async (username, phone, dateOfBirth, email, password) => {
     set({ isLoading: true });
     try {
@@ -92,5 +94,35 @@ export const useAuthStore = create((set) => ({
       console.error("Error during logout:", error);
     }
   },
-        
+      
+  // store/authStore.js (suite)
+forgotPasswordApi : async (email) => {
+  try {
+    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.message };
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+},
+
+ resetPasswordApi : async (email, otp, newPassword) => {
+  try {
+    const res = await fetch(`${API_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp, newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.message };
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
 }));

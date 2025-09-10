@@ -3,6 +3,7 @@ import { StyleSheet } from "react-native";
 import COLORS from "../../constants/colors";
 
 const styles = StyleSheet.create({
+  
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -73,6 +74,20 @@ memberSince: {
   color: COLORS.textSecondary,
   marginLeft: 6,
 },
+editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginTop: 15,
+  },
+  editButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
   logoutButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 12,
@@ -191,7 +206,7 @@ memberSince: {
   editProfileButton: {
   flexDirection: "row",
   alignItems: "center",
-  backgroundColor: "#fff",
+  backgroundColor: COLORS.primary,
   padding: 10,
   borderRadius: 10,
   marginHorizontal: 20,
@@ -205,18 +220,22 @@ memberSince: {
 },
 
 editProfileText: {
-  color: COLORS.primary,
+  color: COLORS.white,
   fontWeight: "bold",
   marginLeft: 5,
 },
-modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.4)", // fond assombri
-  justifyContent: "center",
-  alignItems: "center",
-  padding: 20,
-},
-
+ modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+ modalContent: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+  },
 modalCard: {
   width: "100%",
   backgroundColor: "#fff",
@@ -229,14 +248,13 @@ modalCard: {
   elevation: 5,
 },
 
-modalTitle: {
-  fontSize: 18,
-  fontWeight: "bold",
-  color: COLORS.primary,
-  marginBottom: 15,
-  textAlign: "center",
-},
-
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: COLORS.primary,
+    textAlign: "center",
+  },
 inputWrapper: {
   flexDirection: "row",
   alignItems: "center",
@@ -248,18 +266,46 @@ inputWrapper: {
   marginBottom: 12,
   backgroundColor: "#f9f9f9",
 },
-
+input: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 10,
+  },
+  cancelButton: {
+    marginRight: 10,
+    padding: 10,
+  },
+  cancelText: {
+    color: COLORS.textSecondary,
+  },
+  saveButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  saveText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 inputField: {
   flex: 1,
   fontSize: 14,
   color: COLORS.text,
 },
-
+/*
 modalActions: {
   flexDirection: "row",
   justifyContent: "space-between",
   marginTop: 20,
-},
+},*/
 
 modalButton: {
   flex: 1,
@@ -269,7 +315,7 @@ modalButton: {
   marginHorizontal: 5,
 },
 
-cancelButton: {
+/*cancelButton: {
   backgroundColor: COLORS.gray,
 },
 
@@ -285,6 +331,53 @@ cancelText: {
 saveText: {
   color: "#fff",
   fontWeight: "bold",
+},*/
+// Ajoutez ces styles à votre fichier profile.styles.js
+inputGroup: {
+  marginBottom: 16,
+},
+label: {
+  fontSize: 14,
+  fontWeight: "600",
+  color: COLORS.textPrimary,
+  marginBottom: 6,
+},
+inputContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  borderRadius: 10,
+  paddingHorizontal: 12,
+  paddingVertical: 10,
+  backgroundColor: "#f9f9f9",
+},
+inputError: {
+  borderColor: COLORS.error,
+},
+inputIcon: {
+  marginRight: 10,
+},
+errorText: {
+  fontSize: 12,
+  color: COLORS.error,
+  marginTop: 4,
+  marginLeft: 4,
+},
+modalHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+  paddingBottom: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: COLORS.border,
+},
+closeButton: {
+  padding: 4,
+},
+disabledButton: {
+  opacity: 0.6,
 },
 
 });

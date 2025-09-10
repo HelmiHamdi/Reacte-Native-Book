@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
@@ -19,6 +18,8 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { useAuthStore } from "../../store/authStore";
 import { API_URL } from "../../constants/api";
+import CustomAlert from "../../components/CustomAlert"; // ✅ import CustomAlert
+
 export default function Create() {
   const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
@@ -27,65 +28,69 @@ export default function Create() {
   const [imageBase64, setImageBase64] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Alert state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertType, setAlertType] = useState(null);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+
   const router = useRouter();
   const { token } = useAuthStore();
-  console.log("User Token:", token);
+
+  const showAlert = (type, title, message) => {
+    setAlertType(type);
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
+
   const pickImage = async () => {
     try {
-      // request permission if needed
       if (Platform.OS !== "web") {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
         if (status !== "granted") {
-          Alert.alert("Permission Denied", "We need camera roll permissions to upload an image");
+          showAlert("error", "Permission Denied", "We need camera roll permissions to upload an image");
           return;
         }
       }
 
-      // launch image library
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: "images",
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.5, // lower quality for smaller base64
+        quality: 0.5,
         base64: true,
       });
 
       if (!result.canceled) {
         setImage(result.assets[0].uri);
-
-        // if base64 is provided, use it
-
         if (result.assets[0].base64) {
           setImageBase64(result.assets[0].base64);
         } else {
-          // otherwise, convert to base64
           const base64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
           setImageBase64(base64);
         }
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "There was a problem selecting your image");
+      showAlert("error", "Error", "There was a problem selecting your image");
     }
   };
+
   const handleSubmit = async () => {
     if (!title || !caption || !imageBase64 || !rating) {
-      Alert.alert("Error", "Please fill in all fields");
+      showAlert("error", "Missing Fields", "Please fill in all fields");
       return;
     }
 
     try {
       setLoading(true);
 
-      // get file extension from URI or default to jpeg
       const uriParts = image.split(".");
       const fileType = uriParts[uriParts.length - 1];
       const imageType = fileType ? `image/${fileType.toLowerCase()}` : "image/jpeg";
-
       const imageDataUrl = `data:${imageType};base64,${imageBase64}`;
 
       const response = await fetch(`${API_URL}/books/create`, {
@@ -103,23 +108,28 @@ export default function Create() {
       });
 
       const data = await response.json();
+      console.log("📥 Response from API:", data);
+
       if (!response.ok) throw new Error(data.message || "Something went wrong");
 
-      Alert.alert("Success", "Your book recommendation has been posted!");
+      showAlert("success", "Success 🎉", "Your book recommendation has been posted!");
       setTitle("");
       setCaption("");
       setRating(3);
       setImage(null);
       setImageBase64(null);
-      router.push("/");
+
+      setTimeout(() => {
+        setAlertVisible(false);
+        router.push("/");
+      }, 2000); // ✅ ferme après 2s puis redirection
     } catch (error) {
       console.error("Error creating post:", error);
-      Alert.alert("Error", error.message || "Something went wrong");
+      showAlert("error", "Error", error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
-
 
   const renderRatingPicker = () => {
     const stars = [];
@@ -136,21 +146,14 @@ export default function Create() {
     }
     return <View style={styles.ratingContainer}>{stars}</View>;
   };
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        style={styles.scrollView}
-      >
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView contentContainerStyle={styles.container} style={styles.scrollView}>
         <View style={styles.card}>
           <View style={styles.header}>
             <Text style={styles.title}>📘➕ Add Books ➕📘</Text>
-            <Text style={styles.subtitle}>
-              Share your favorite reads with others
-            </Text>
+            <Text style={styles.subtitle}>Share your favorite reads with others</Text>
           </View>
 
           <View style={styles.form}>
@@ -173,12 +176,15 @@ export default function Create() {
                 />
               </View>
             </View>
-             {/* RATING */}
+
+            {/* RATING */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Your Rating</Text>
-                {renderRatingPicker()}
+              {renderRatingPicker()}
             </View>
-             <View style={styles.formGroup}>
+
+            {/* IMAGE */}
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Book Image</Text>
               <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
                 {image ? (
@@ -191,9 +197,10 @@ export default function Create() {
                 )}
               </TouchableOpacity>
             </View>
-              {/* CAPTION */}
+
+            {/* CAPTION */}
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Decription</Text>
+              <Text style={styles.label}>Description</Text>
               <TextInput
                 style={styles.textArea}
                 placeholder="Write your review or thoughts about this book..."
@@ -203,6 +210,8 @@ export default function Create() {
                 multiline
               />
             </View>
+
+            {/* SUBMIT BUTTON */}
             <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
               {loading ? (
                 <ActivityIndicator color={COLORS.white} />
@@ -221,6 +230,15 @@ export default function Create() {
           </View>
         </View>
       </ScrollView>
+
+      {/* ✅ CustomAlert intégré */}
+      <CustomAlert
+        visible={alertVisible}
+        type={alertType}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setAlertVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

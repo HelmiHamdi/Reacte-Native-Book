@@ -2,6 +2,9 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 
+import crypto from "crypto";
+import { sendEmail } from "../lib/mailer.js"; // fonction utilitaire pour envoyer mail
+
 export const register = async (req, res) => {
   try {
     const { username, phone, dateOfBirth, email, password } = req.body;
@@ -108,48 +111,21 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-
-
-
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user._id; // récupéré via protectRoute
     const { username, email, phone, dateOfBirth } = req.body;
+    const user = await User.findById(req.user._id);
 
-    // Vérifier que l'utilisateur existe
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Vérification email (uniquement si modifié)
-    if (email && email !== user.email) {
-      const existingEmail = await User.findOne({ email });
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already in use" });
-      }
-      user.email = email;
-    }
-
-    // Vérification téléphone (uniquement si modifié)
-    if (phone && phone !== user.phone) {
-      const existingPhone = await User.findOne({ phone });
-      if (existingPhone) {
-        return res.status(400).json({ message: "Phone number already in use" });
-      }
-      user.phone = phone;
-    }
-
-    // Mise à jour des autres champs
-    if (username) user.username = username;
-    if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.phone = phone || user.phone;
+    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
 
     await user.save();
 
-    res.status(200).json({
-      message: "Profile updated successfully",
+    res.json({
       user: {
         _id: user._id,
         username: user.username,
@@ -160,7 +136,75 @@ export const updateProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error updating profile:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
+    console.error("Update error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// controllers/authControllers.js
+
+
+
+// 1️⃣ Forgot Password - envoyer OTP
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Génération OTP 6 chiffres
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Stock OTP temporairement
+    user.resetPasswordOtp = otp;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // expire 10 min
+    await user.save();
+
+    // Envoyer OTP par email
+    await sendEmail({
+      to: email,
+      subject: "Your Reset Password OTP",
+      text: `Your OTP code is: ${otp}. It expires in 10 minutes.`,
+    });
+
+    res.json({ message: "OTP sent to your email" });
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 2️⃣ Reset Password - vérifier OTP et changer mot de passe
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword)
+      return res.status(400).json({ message: "All fields are required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (
+      user.resetPasswordOtp !== otp ||
+      user.resetPasswordExpires < Date.now()
+    ) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Hash nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Supprimer OTP
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

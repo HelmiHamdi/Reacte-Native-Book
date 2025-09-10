@@ -86,3 +86,48 @@ export const deleteBook = async (req, res) => {
   }
 };
 
+export const updateBook = async (req, res) => {
+  try {
+    const { title, caption, rating, image } = req.body;
+    const book = await Book.findById(req.params.id);
+    
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    
+    if (book.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to update this book" });
+    }
+
+    let imageUrl = book.image;
+    
+    // Si une nouvelle image est fournie
+    if (image && image !== book.image) {
+      // Supprimer l'ancienne image de Cloudinary
+      if (book.image && book.image.includes("cloudinary")) {
+        try {
+          const publicId = book.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.log("Error deleting old image:", error);
+        }
+      }
+      
+      // Uploader la nouvelle image
+      const uploadResponse = await cloudinary.uploader.upload(image);
+      imageUrl = uploadResponse.secure_url;
+    }
+
+    // Mettre à jour le livre
+    const updatedBook = await Book.findByIdAndUpdate(
+      req.params.id,
+      { title, caption, rating, image: imageUrl },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json(updatedBook);
+  } catch (error) {
+    console.error("Error updating book:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};

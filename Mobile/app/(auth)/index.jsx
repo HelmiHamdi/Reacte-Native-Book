@@ -12,8 +12,9 @@ import styles from "../../assets/styles/login.styles";
 import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
-import { Link } from "expo-router";
+import { Link,useRouter } from "expo-router";
 import { useAuthStore } from "../../store/authStore";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ export default function Login() {
   const { isLoading, user, login, token, isCheckingAuth } = useAuthStore();
 
   const [errors, setErrors] = useState({}); // erreurs par champ
-
+const router = useRouter();
   const handleLogin = async () => {
     const newErrors = {};
 
@@ -124,7 +125,11 @@ export default function Login() {
               </View>
               {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
-
+           <View style={{ marginTop: 8, alignItems: "flex-end" }}>
+  <TouchableOpacity onPress={() => router.push("/(auth)/ForgotPassword")}>
+  <Text style={{ color: COLORS.primary, fontWeight: "600" }}>Forgot Password?</Text>
+</TouchableOpacity>
+</View>
             {/* Bouton Login */}
             <TouchableOpacity
               style={styles.button}
